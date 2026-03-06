@@ -1,0 +1,59 @@
+---
+title: "Data Cleaning"
+author: "Chengyi Wang"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: spacelab
+    toc: no
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(readxl)
+```
+
+Load excel data
+```{r}
+df <- read_excel("../data/nasopharyngeal carcinoma/Database_for_High-Risk_Nasopharyngeal_Carcinoma_Treated_with_Chemoradiotherapy_and_Immunotherapy.xlsx")
+glimpse(df)
+```
+quick cleaning
+```{r}
+df <- df %>% clean_names()
+
+```
+
+fix these variables:
+- ITT group: The group to which the patient was randomly assigned (1-Standard therapy group; 2-Camrelizumab group)
+- safety set: Whether the patient is included in the safety set (1-Yes; 0-No) ("2-No" in readme, but there's no 2)
+- PP set: Whether the patient is included in the Per-Protocol set (1-Yes; 0-No) ("2-No" in readme, but there's no 2)
+- Metastasis (Y/N): Whether the patient has had distant metastasis or not (0-No; 1-Yes)
+- Survival (Y/N): Whether the patient has died or not (0-No; 1-Yes)
+- progression (Y/N): Whether the patient has experienced loco-regional relapse, distant metastasis, or death from any cause or not (0-No; 1-Yes)
+- Recurrence (Y/N): Whether the patient has had locoregional relapse or not (0-No; 1-Yes)
+- Metastasis (Y/N): Whether the patient has had distant metastasis or not (0-No; 1-Yes)
+```{r}
+df <- df %>% 
+  mutate(across(c(safety_set,pp_set,ebv_clearance_status,survival_y_n,progression_y_n,recurrence_y_n,metastasis_y_n),~case_when(
+    . == 1 ~ TRUE,
+    . == 0 ~ FALSE
+  ))) %>% 
+  mutate(across(c(itt_group),~case_when(
+    . == 1 ~ "Standard therapy group",
+    . == 2 ~ "Camrelizumab group"
+  ))) %>%  
+  mutate(across(where(is.character), as.factor))
+```
+
+```{r}
+summary(df)
+```
+```{r}
+write_csv(df,"cleaned_data.csv")
+```
+
+
+
+
