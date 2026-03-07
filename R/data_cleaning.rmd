@@ -51,7 +51,7 @@ df <- df %>%
 summary(df)
 ```
 ```{r}
-write_csv(df,"cleaned_data.csv")
+write_csv(df,"data/cleaned_data.csv")
 ```
 
 

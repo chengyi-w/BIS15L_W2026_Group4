@@ -1,0 +1,73 @@
+---
+title: "Data analysis and Visualization"
+author: "Renxiao Deng"
+date: "2026-03-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(tidyverse)
+library(janitor)
+library(readxl)
+```
+
+## Importing Cleaned data
+
+
+```{r echo=FALSE}
+result <- read_csv("data/cleaned_data.csv")
+```
+
+```{r}
+result %>% summary()
+```
+Notes:
+
+first will be evaulate the impact on survivial rate of different stage of cancer
+
+responded to induction chemotherapy means if the chemotherapy is effective or not before the test trial
+
+safety set count and pp set count in table(safety set means the patient at least received chemotherapy; pp set means the patient at least received 3 cycles of chemotherapy and imaging after 3 cycles of chemotherapy)
+
+Categorzing Vairables:
+
+Patient Status Before Treatment: cancer TNM stage, respond to chemotherapy or not, kps, in safety set or ppset or not
+
+Results: os(only consider False in survivial yn), pfs, irrfs, dmfs,(those 3 only consider true in corresponding column) and imaging_after_3_cycles_of_ic, also ebv clearance status(virus associated with this type of cancer)
+
+Plotting plan
+
+Data exploration: TNM stage, respond to chemotherapy or not, kps, and survival status (bar plot)
+
+Addtionally, the survival expectancy with respect to different TNM stage, respond to chemotherapy or not, kps (line plot)
+
+Effect on imaging after 3 cycles of chemotherapy (bar plot)
+
+Effect of the novel treatment: on survival status, pfs, irrfs, dmfs, and  (line plot)
+
+
+*compare with control group: to those not in safety set or pp set (a shiny app feature)
+
+```{r}
+result %>% group_by(safety_set) %>% summarise(count = n())
+result %>% group_by(pp_set) %>% summarise(count = n())
+```
+
+```{r}
+result %>% group_by(imaging_after_3_cycles_of_ic) %>% summarise(count = n())
+```
+```{r}
+result %>% group_by(survival_y_n) %>% summarise(count = n())
+```
+
+
