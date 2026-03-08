@@ -33,23 +33,23 @@ result %>% summary()
 ```
 Notes:
 
-first will be evaulate the impact on survivial rate of different stage of cancer
+first will be evaluate the impact on survival rate of different stage of cancer
 
 responded to induction chemotherapy means if the chemotherapy is effective or not before the test trial
 
 safety set count and pp set count in table(safety set means the patient at least received chemotherapy; pp set means the patient at least received 3 cycles of chemotherapy and imaging after 3 cycles of chemotherapy)
 
-Categorzing Vairables:
+Categorizing Variables:
 
 Patient Status Before Treatment: cancer TNM stage, respond to chemotherapy or not, kps, in safety set or ppset or not
 
-Results: os(only consider False in survivial yn), pfs, irrfs, dmfs,(those 3 only consider true in corresponding column) and imaging_after_3_cycles_of_ic, also ebv clearance status(virus associated with this type of cancer)
+Results: os(only consider False in survival yn), pfs, irrfs, dmfs,(those 3 only consider true in corresponding column) and imaging_after_3_cycles_of_ic, also ebv clearance status(virus associated with this type of cancer)
 
 Plotting plan
 
 Data exploration: TNM stage, respond to chemotherapy or not, kps, and survival status (bar plot)
 
-Addtionally, the survival expectancy with respect to different TNM stage, respond to chemotherapy or not, kps (line plot)
+Additionally, the survival expectancy with respect to different TNM stage, respond to chemotherapy or not, kps (line plot)
 
 Effect on imaging after 3 cycles of chemotherapy (bar plot)
 
@@ -58,16 +58,63 @@ Effect of the novel treatment: on survival status, pfs, irrfs, dmfs, and  (line 
 
 *compare with control group: to those not in safety set or pp set (a shiny app feature)
 
+## Data exploration: TNM stage, respond to chemotherapy or not, kps, and survival status (bar plot)
+
+TNM stage by detailed splitting
+
+Note: each stage has the base of entire population and patients experienced different sub-stages in each TNM stage
 ```{r}
-result %>% group_by(safety_set) %>% summarise(count = n())
-result %>% group_by(pp_set) %>% summarise(count = n())
+result_long <- result %>% 
+  pivot_longer(cols = c("t_stage","n_stage","m_stage"), names_to = "stage_type", values_to = "stage_value")%>%
+  mutate(stage_type = factor(stage_type,
+                             levels = c("t_stage", "n_stage", "m_stage")))
+result_long %>% ggplot(aes(x=factor(stage_value),fill=survival_y_n)) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~stage_type,nrow = 1) +
+  labs(title = "TNM stage of patients", x = "Stage Value", y = "Count", fill="survival status")
+```
+
+Count for respond to chemotherapy or not
+```{r}
+result %>% ggplot(aes(x=overall_response_y_n,fill=survival_y_n)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Response to Chemotherapy", x = "Response", y = "Count",fill="survival status")
+```
+
+Karnofsky Performance Status
+```{r}
+result %>% ggplot(aes(x=kps,fill=survival_y_n)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Karnofsky Performance Status", x = "score", y = "Count",fill="survival status")
+```
+
+Overall Survival with respect to different TNM stage, respond to chemotherapy or not and kps
+```{r}
+ggplot(result_long, aes(x = stage_type, y = os)) +
+  geom_boxplot()
 ```
 
 ```{r}
-result %>% group_by(imaging_after_3_cycles_of_ic) %>% summarise(count = n())
+ggplot(result, aes(x = overall_response_y_n, y = os)) +
+  geom_boxplot()
 ```
+
 ```{r}
-result %>% group_by(survival_y_n) %>% summarise(count = n())
+result <- result %>%
+  mutate(kps = factor(kps,
+                      levels = c("100", "90", "80")))
+ggplot(result, aes(x = kps, y = os)) +
+  geom_boxplot()
 ```
 
+Critical
 
+ORR PR+CR/total
+DCR (Disease control rate) PR+CR+SD/total
+Find mpfs(Don't calculate mean, because it depdends so much on patient)
+DOR (Duration of response) time from first response to progression or death (also calculate the median)
+
+Waterfall Charts 
+Do for ORR
+
+Spider plot
