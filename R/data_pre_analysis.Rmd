@@ -2,7 +2,9 @@
 title: "Data analysis and Visualization"
 author: "Renxiao Deng"
 date: "2026-03-07"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,11 +16,18 @@ knitr::opts_chunk$set(echo = TRUE)
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+install.packages("survival")
+install.packages("survminer")
+```
+
 
 ```{r cars}
 library(tidyverse)
 library(janitor)
 library(readxl)
+library(survival)
+library(survminer)
 ```
 
 ## Importing Cleaned data
@@ -90,20 +99,16 @@ result %>% ggplot(aes(x=kps,fill=survival_y_n)) +
 
 Overall Survival with respect to different TNM stage, respond to chemotherapy or not and kps
 ```{r}
-ggplot(result_long, aes(x = stage_type, y = os)) +
+result_long %>%
+  filter(survival_y_n == TRUE) %>%
+ggplot(aes(x = stage_type, y = os)) +
   geom_boxplot()
 ```
 
 ```{r}
-ggplot(result, aes(x = overall_response_y_n, y = os)) +
-  geom_boxplot()
-```
-
-```{r}
-result <- result %>%
-  mutate(kps = factor(kps,
-                      levels = c("100", "90", "80")))
-ggplot(result, aes(x = kps, y = os)) +
+result %>%
+  filter(survival_y_n == TRUE) %>%
+ggplot(aes(x = overall_response_y_n, y = os)) +
   geom_boxplot()
 ```
 
@@ -111,10 +116,202 @@ Critical
 
 ORR PR+CR/total
 DCR (Disease control rate) PR+CR+SD/total
-Find mpfs(Don't calculate mean, because it depdends so much on patient)
+Find mpfs(Don't calculate mean, because it depends so much on patient)
 DOR (Duration of response) time from first response to progression or death (also calculate the median)
 
 Waterfall Charts 
 Do for ORR
 
 Spider plot
+
+```{r}
+result %>% 
+  filter(pp_set == "TRUE") %>% 
+  ggplot(aes(x=imaging_after_3_cycles_of_ic,fill=itt_group)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Tumor Progression by Image after 3 cycles of therapy", x = "Progression", y = "Count", fill="Treatment")
+```
+#Data Re-organization
+```{r}
+km_curve  <- result %>%
+  mutate(
+    survival_event = case_when(
+      survival_y_n == FALSE ~ 0,
+      survival_y_n == TRUE ~ 1
+    ),
+    progression_event = case_when(
+      progression_y_n == FALSE ~ 0,
+      progression_y_n == TRUE ~ 1
+    ),
+    recurrence_event = case_when(
+      recurrence_y_n == FALSE ~ 0,
+      recurrence_y_n == TRUE ~ 1
+    ),
+    metastasis_event = case_when(
+      metastasis_y_n == FALSE ~ 0,
+      metastasis_y_n == TRUE ~ 1
+    )
+  )#Convert back to 1 and 0s
+```
+
+#Kaplan–Meier curve for overall survival
+
+```{r}
+fit_os <- survfit(Surv(os, survival_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+```
+
+```{r}
+ggsurvplot(
+  fit_os,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Overall Survival Probability",
+  title = "Kaplan–Meier Curve for Overall Survival",
+  conf.int = TRUE,
+)
+```
+#Kaplan–Meier curve for Progression-Free Survival
+
+```{r}
+fit_progression <- survfit(Surv(pfs, progression_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+```
+
+```{r}
+ggsurvplot(
+  fit_progression,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Progression Survival Probability",
+  title = "Kaplan–Meier Curve for Progression Survival Probability",
+  conf.int = TRUE,
+)
+```
+#Kaplan–Meier curve for Recurrence-Free Survival
+
+```{r}
+fit_recurrence <- survfit(Surv(pfs, recurrence_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+```
+
+```{r}
+ggsurvplot(
+  fit_recurrence,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Recurrence Survival Probability",
+  title = "Kaplan–Meier Curve for Recurrence Survival Probability",
+  conf.int = TRUE,
+)
+```
+#Kaplan–Meier curve for Metastasis-Free Survival
+
+```{r}
+fit_metastasis <- survfit(Surv(pfs, metastasis_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+```
+
+```{r}
+ggsurvplot(
+  fit_metastasis,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Metastasis Survival Probability",
+  title = "Kaplan–Meier Curve for Metastasis Survival Probability",
+  conf.int = TRUE,
+)
+```
+#Swimming Plot for patients
+
+Step1: organize into new base for swimplot
+```{r}
+swim_base <- result %>%
+  transmute(
+    no,
+    itt_group,
+    followup_time = os,
+    recurrence_time = if_else(recurrence_y_n == TRUE, lrrfs, NA_real_),
+    metastasis_time = if_else(metastasis_y_n == TRUE, dmfs, NA_real_),
+    progression_time = if_else(progression_y_n == TRUE, pfs, NA_real_),
+    death_time = if_else(survival_y_n == TRUE, os, NA_real_)
+  )
+```
+
+Step2: Pivot longer for better analysis
+```{r}
+swim_event <- swim_base %>%
+  pivot_longer(
+    cols = c(recurrence_time, metastasis_time, progression_time, death_time),
+    names_to = "event_type",
+    values_to = "event_time"
+  )%>%
+  filter(!is.na(event_time))
+```
+
+Step3: Arrange the patients by their follow up time as patient order
+```{r}
+swim_order <- swim_base %>%
+  arrange(followup_time) %>%
+  mutate(order = row_number())
+
+swim_event <-
+  left_join(swim_event,swim_order %>% select(no, order),by = "no")
+```
+
+Step 4: Final plotting
+```{r}
+swim_order %>% 
+  filter(itt_group == "Camrelizumab group") %>%
+  ggplot() +
+  geom_segment(
+    aes(x = 0, xend = followup_time,
+      y = order, yend = order,
+      color = no),
+    linewidth = 1) +
+  geom_point(
+    data = swim_event,
+    aes(
+      x = event_time,
+      y = order,
+      shape = event_type
+    ),
+    size = 2.5,
+    color = "darkorange"
+  ) +
+  labs(
+    title = "Swimmer Plot of Clinical Events for Camrelizumab group",
+    x = "Time (months)",
+    y = "Patients",
+    color = "Patient Number",
+    shape = "Event Type"
+  )+theme_minimal()
+```
+
+```{r}
+swim_order %>% 
+  filter(itt_group == "Standard therapy group") %>%
+  ggplot() +
+  geom_segment(
+    aes(x = 0, xend = followup_time,
+      y = order, yend = order,
+      color = no),
+    linewidth = 1) +
+  geom_point(
+    data = swim_event,
+    aes(
+      x = event_time,
+      y = order,
+      shape = event_type,   
+    ),
+    size = 2.5,
+    color = "darkorange"
+  ) +
+  labs(
+    title = "Swimmer Plot of Clinical Events for Standard therapy group",
+    x = "Time (months)",
+    y = "Patients",
+    color = "Patient Number",
+    shape = "Event Type"
+  )+theme_minimal()
+```
