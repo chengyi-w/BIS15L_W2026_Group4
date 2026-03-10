@@ -1,0 +1,7 @@
+Overall Survival with respect to different TNM stage, respond to chemotherapy or not and kps
+```{r}
+result_long %>%
+  filter(survival_y_n == TRUE) %>%
+ggplot(aes(x = stage_type, y = os)) +
+  geom_boxplot()
+```
