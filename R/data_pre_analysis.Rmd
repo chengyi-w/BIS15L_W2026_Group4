@@ -3,8 +3,8 @@ title: "Data analysis and Visualization"
 author: "Renxiao Deng"
 date: "2026-03-07"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,8 +17,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 ```{r}
-install.packages("survival")
-install.packages("survminer")
+#install.packages("survival")
+#install.packages("survminer")
 ```
 
 
@@ -96,15 +96,7 @@ result %>% ggplot(aes(x=kps,fill=survival_y_n)) +
   geom_bar(position = "dodge") +
   labs(title = "Karnofsky Performance Status", x = "score", y = "Count",fill="survival status")
 ```
-
-Overall Survival with respect to different TNM stage, respond to chemotherapy or not and kps
-```{r}
-result_long %>%
-  filter(survival_y_n == TRUE) %>%
-ggplot(aes(x = stage_type, y = os)) +
-  geom_boxplot()
-```
-
+Overall Survival with respect to overal response to chemotherapy
 ```{r}
 result %>%
   filter(survival_y_n == TRUE) %>%
@@ -123,6 +115,14 @@ Waterfall Charts
 Do for ORR
 
 Spider plot
+
+Overall Survival with respect to different TNM stage, respond to chemotherapy or not and kps
+```{r}
+result_long %>%
+  filter(survival_y_n == TRUE) %>%
+ggplot(aes(x = stage_type, y = os)) +
+  geom_boxplot()
+```
 
 ```{r}
 result %>% 
