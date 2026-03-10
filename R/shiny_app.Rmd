@@ -1,0 +1,353 @@
+---
+title: "shiny_app"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(survival)
+library(survminer)
+library(shiny)
+library(shinydashboard)
+```
+
+```{r}
+result <- read_csv("data/cleaned_data.csv")
+```
+
+#barplots
+```{r}
+result_long <- result %>% 
+  pivot_longer(cols = c("t_stage","n_stage","m_stage"), names_to = "stage_type", values_to = "stage_value")%>%
+  mutate(stage_type = factor(stage_type,
+                             levels = c("t_stage", "n_stage", "m_stage")))
+t_stage_bar <- result_long %>% 
+  filter(stage_type == "t_stage") %>% 
+  ggplot(aes(x = factor(stage_value), fill = survival_y_n)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Survival proportion by T stage",
+    x = "T stage",
+    y = "Porpotion of patients",
+    fill = "Survival status"
+  ) +
+  scale_x_discrete(labels = c("1" = "T1", "2" = "T2", "3" = "T3", "4" = "T4")) +
+  scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived"))+
+  theme_minimal()
+
+n_stage_bar <- result_long %>% 
+  filter(stage_type == "n_stage") %>% 
+  ggplot(aes(x = factor(stage_value), fill = survival_y_n)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Survival proportion by N stage",
+    x = "N stage",
+    y = "Porpotion of patients",
+    fill = "Survival status"
+  ) +
+  scale_x_discrete(labels = c("0" = "N0", "1" = "N1", "2" = "N2", "3" = "N3")) +
+  scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived"))+
+  theme_minimal()
+
+m_stage_bar <- result_long %>% 
+  filter(stage_type == "m_stage") %>% 
+  ggplot(aes(x = factor(stage_value), fill = survival_y_n)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Survival proportion by M stage",
+    x = "M stage",
+    y = "Porpotion of patients",
+    fill = "Survival status"
+  ) +
+  scale_x_discrete(labels = c("0" = "M0", "1" = "M1")) +
+  scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived")) +
+  theme_minimal()
+
+chemo_bar <- result %>% ggplot(aes(x=overall_response_y_n,fill=survival_y_n)) +
+  geom_bar(position = "fill") +
+  labs(title = "Survival proportion by Chemotherapy or not", x = "Response", y = "Porpotion of patients",fill="Survival status") +
+  scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived")) +
+  theme_minimal()
+```
+#boxplots
+```{r}
+box_stage <- result_long %>%
+  filter(survival_y_n == TRUE) %>%
+  ggplot(aes(x = stage_type, y = os, fill = stage_type)) +
+  geom_boxplot()+
+  labs(x="Type of TNM stage",y="Overall survival (Months)")+
+  theme_minimal()  
+
+box_response <- result %>%
+  filter(survival_y_n == TRUE) %>%
+  ggplot(aes(x = overall_response_y_n, y = os, fill = overall_response_y_n)) +
+  geom_boxplot()+
+  labs(x=" responded to induction chemotherapy or not",y="Overall survival (Months)")+
+  theme_minimal()  
+```
+
+# Kaplan–Meier curve
+```{r}
+km_curve  <- result %>%
+  mutate(
+    survival_event = case_when(
+      survival_y_n == FALSE ~ 0,
+      survival_y_n == TRUE ~ 1
+    ),
+    progression_event = case_when(
+      progression_y_n == FALSE ~ 0,
+      progression_y_n == TRUE ~ 1
+    ),
+    recurrence_event = case_when(
+      recurrence_y_n == FALSE ~ 0,
+      recurrence_y_n == TRUE ~ 1
+    ),
+    metastasis_event = case_when(
+      metastasis_y_n == FALSE ~ 0,
+      metastasis_y_n == TRUE ~ 1
+    )
+  )#Convert back to 1 and 0s
+
+
+#Kaplan–Meier curve for overall survival
+
+
+fit_os <- survfit(Surv(os, survival_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+
+kmc_overall <- ggsurvplot(
+  fit_os,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Overall Survival Probability",
+  title = "Kaplan–Meier Curve for Overall Survival",
+  conf.int = TRUE,
+)
+
+#Kaplan–Meier curve for Progression-Free Survival
+
+
+fit_progression <- survfit(Surv(pfs, progression_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+
+
+
+kmc_progression <- ggsurvplot(
+  fit_progression,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Progression Survival Probability",
+  title = "Kaplan–Meier Curve for Progression Survival Probability",
+  conf.int = TRUE,
+)
+
+#Kaplan–Meier curve for Recurrence-Free Survival
+
+
+fit_recurrence <- survfit(Surv(pfs, recurrence_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+
+kmc_recurrence <- ggsurvplot(
+  fit_recurrence,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Recurrence Survival Probability",
+  title = "Kaplan–Meier Curve for Recurrence Survival Probability",
+  conf.int = TRUE,
+)
+
+#Kaplan–Meier curve for Metastasis-Free Survival
+
+fit_metastasis <- survfit(Surv(pfs, metastasis_event) ~ itt_group, data = km_curve)
+#tells R to estimate one curve per treatment group
+
+kmc_metastasis <- ggsurvplot(
+  fit_metastasis,
+  data = km_curve,
+  xlab = "Time (months)",
+  ylab = "Metastasis Survival Probability",
+  title = "Kaplan–Meier Curve for Metastasis Survival Probability",
+  conf.int = TRUE,
+)
+```
+#Swimmer Plot
+
+```{r}
+#Step1: organize into new base for swimplot
+swim_base <- result %>%
+  transmute(
+    no,
+    itt_group,
+    followup_time = os,
+    recurrence_time = if_else(recurrence_y_n == TRUE, lrrfs, NA_real_),
+    metastasis_time = if_else(metastasis_y_n == TRUE, dmfs, NA_real_),
+    progression_time = if_else(progression_y_n == TRUE, pfs, NA_real_),
+    death_time = if_else(survival_y_n == TRUE, os, NA_real_)
+  )
+
+
+# Step2: Pivot longer for better analysis
+
+swim_event <- swim_base %>%
+  pivot_longer(
+    cols = c(recurrence_time, metastasis_time, progression_time, death_time),
+    names_to = "event_type",
+    values_to = "event_time"
+  )%>%
+  filter(!is.na(event_time))
+
+
+# Step3: Arrange the patients by their follow up time as patient order
+
+swim_order <- swim_base %>%
+  arrange(followup_time) %>%
+  mutate(order = row_number())
+
+swim_event <-
+  left_join(swim_event,swim_order %>% select(no, order),by = "no")
+
+
+# Step 4: Final plotting
+
+swimmer_camrelizumab <- swim_order %>% 
+  filter(itt_group == "Camrelizumab group") %>%
+  ggplot() +
+  geom_segment(
+    aes(x = 0, xend = followup_time,
+      y = order, yend = order,
+      color = no),
+    linewidth = 1) +
+  geom_point(
+    data = swim_event,
+    aes(
+      x = event_time,
+      y = order,
+      shape = event_type
+    ),
+    size = 2.5,
+    color = "darkorange"
+  ) +
+  labs(
+    title = "Swimmer Plot of Clinical Events for Camrelizumab group",
+    x = "Time (months)",
+    y = "Patients",
+    color = "Patient Number",
+    shape = "Event Type"
+  )+theme_minimal()
+
+swimmer_standard <- swim_order %>% 
+  filter(itt_group == "Standard therapy group") %>%
+  ggplot() +
+  geom_segment(
+    aes(x = 0, xend = followup_time,
+      y = order, yend = order,
+      color = no),
+    linewidth = 1) +
+  geom_point(
+    data = swim_event,
+    aes(
+      x = event_time,
+      y = order,
+      shape = event_type,   
+    ),
+    size = 2.5,
+    color = "darkorange"
+  ) +
+  labs(
+    title = "Swimmer Plot of Clinical Events for Standard therapy group",
+    x = "Time (months)",
+    y = "Patients",
+    color = "Patient Number",
+    shape = "Event Type"
+  )+theme_minimal()
+```
+
+#base shiny framework
+```{r, eval=F, echo=T}
+
+ui <- fluidPage(
+  radioButtons("bar_var",
+               "Select Variable for Survival Barplot",
+               choices = c("T Stage","N Stage","M Stage","Chemotherapy")),
+  radioButtons("box_var",
+               "Select Type of Boxplot",
+               choices = c("TNM Stage","Repsonse to Chemotherapy")),
+  radioButtons("kmc_var",
+               "Select Type of Kaplan–Meier curve",
+               choices = c("Overall","Progression","Recurrence","Metastasis")),
+  radioButtons("swimmer_var",
+               "Select Type of Swimmer Plot",
+               choices = c("Standard therapy group","Camrelizumab group")),
+  plotOutput("barplot"),
+  plotOutput("boxplot"),
+  plotOutput("kmcplot"),
+  plotOutput("swimmerplot")
+  
+)
+
+server <- function(input, output, session) {
+  output$barplot <- renderPlot({
+    plot <- switch(
+      input$bar_var,
+      "T Stage" = t_stage_bar,
+      "N Stage" = n_stage_bar,
+      "M Stage" = m_stage_bar,
+      "Chemotherapy" = chemo_bar
+    )
+    print(plot)
+  })
+  
+  output$boxplot <- renderPlot({
+    plot <- switch(
+      input$box_var,
+      "TNM Stage" = box_stage,
+      "Repsonse to Chemotherapy" = box_response
+    )
+    print(plot)
+  })
+  
+  output$kmcplot <- renderPlot({
+    plot <- switch(
+      input$kmc_var,
+      "Overall" = kmc_overall,
+      "Progression" = kmc_progression,
+      "Recurrence" = kmc_recurrence,
+      "Metastasis" = kmc_metastasis
+    )
+    print(plot)
+  })
+  
+  output$swimmerplot <- renderPlot({
+    plot <- switch(
+      input$swimmer_var,
+      "Standard therapy group" = swimmer_standard,
+      "Camrelizumab group" = swimmer_camrelizumab
+    )
+    print(plot)
+  })  
+}
+
+shinyApp(ui, server)
+```
+
+#better-looking shiny app
+```{r, eval=F, echo=T}
+ui <- 
+  dashboardPage(
+    
+  
+  dashboardHeader(title = "This is the Header"),
+ 
+  dashboardSidebar(title = "This is the Sidebar"),
+  
+  dashboardBody() # this is where the output will go
+)
+
+server <- function(input, output) { }
+
+shinyApp(ui, server)
+```
+
+
