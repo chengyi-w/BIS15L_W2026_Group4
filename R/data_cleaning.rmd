@@ -14,18 +14,18 @@ library(janitor)
 library(readxl)
 ```
 
-Load excel data
+## Load excel data
 ```{r}
-df <- read_excel("../data/nasopharyngeal carcinoma/Database_for_High-Risk_Nasopharyngeal_Carcinoma_Treated_with_Chemoradiotherapy_and_Immunotherapy.xlsx")
+df <- read_excel("data/nasopharyngeal carcinoma/Database_for_High-Risk_Nasopharyngeal_Carcinoma_Treated_with_Chemoradiotherapy_and_Immunotherapy.xlsx")
 glimpse(df)
 ```
-quick cleaning
+## quick cleaning
 ```{r}
 df <- df %>% clean_names()
 
 ```
 
-fix these variables:
+## fix some variables:
 - ITT group: The group to which the patient was randomly assigned (1-Standard therapy group; 2-Camrelizumab group)
 - safety set: Whether the patient is included in the safety set (1-Yes; 0-No) ("2-No" in readme, but there's no 2)
 - PP set: Whether the patient is included in the Per-Protocol set (1-Yes; 0-No) ("2-No" in readme, but there's no 2)
@@ -47,9 +47,11 @@ df <- df %>%
   mutate(across(where(is.character), as.factor))
 ```
 
+## checking
 ```{r}
 summary(df)
 ```
+## write out cleaned one as csv
 ```{r}
 write_csv(df,"data/cleaned_data.csv")
 ```

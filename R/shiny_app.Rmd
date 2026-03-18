@@ -16,8 +16,10 @@ library(shinydashboard)
 ```{r}
 result <- read_csv("data/cleaned_data.csv")
 ```
+# plots
+run and store the plots first, so it will be easier to build the shinyapp later and looks cleaner 
 
-#barplots
+## barplots
 ```{r}
 result_long <- result %>% 
   pivot_longer(cols = c("t_stage","n_stage","m_stage"), names_to = "stage_type", values_to = "stage_value")%>%
@@ -71,7 +73,7 @@ chemo_bar <- result %>% ggplot(aes(x=overall_response_y_n,fill=survival_y_n)) +
   scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived")) +
   theme_minimal()
 ```
-#boxplots
+## boxplots
 ```{r}
 box_stage <- result_long %>%
   filter(survival_y_n == TRUE) %>%
@@ -88,7 +90,7 @@ box_response <- result %>%
   theme_minimal()  
 ```
 
-# Kaplan–Meier curve
+## Kaplan–Meier curve
 ```{r}
 km_curve  <- result %>%
   mutate(
@@ -172,7 +174,7 @@ kmc_metastasis <- ggsurvplot(
   conf.int = TRUE,
 )
 ```
-#Swimmer Plot
+## Swimmer Plot
 
 ```{r}
 #Step1: organize into new base for swimplot
@@ -264,78 +266,76 @@ swimmer_standard <- swim_order %>%
   )+theme_minimal()
 ```
 
-#base shiny framework
+# basic shiny framework
 ```{r, eval=F, echo=T}
 
-ui <- fluidPage(
-  radioButtons("bar_var",
-               "Select Variable for Survival Barplot",
-               choices = c("T Stage","N Stage","M Stage","Chemotherapy")),
-  radioButtons("box_var",
-               "Select Type of Boxplot",
-               choices = c("TNM Stage","Repsonse to Chemotherapy")),
-  radioButtons("kmc_var",
-               "Select Type of Kaplan–Meier curve",
-               choices = c("Overall","Progression","Recurrence","Metastasis")),
-  radioButtons("swimmer_var",
-               "Select Type of Swimmer Plot",
-               choices = c("Standard therapy group","Camrelizumab group")),
-  plotOutput("barplot"),
-  plotOutput("boxplot"),
-  plotOutput("kmcplot"),
-  plotOutput("swimmerplot")
-  
-)
-
-server <- function(input, output, session) {
-  output$barplot <- renderPlot({
-    plot <- switch(
-      input$bar_var,
-      "T Stage" = t_stage_bar,
-      "N Stage" = n_stage_bar,
-      "M Stage" = m_stage_bar,
-      "Chemotherapy" = chemo_bar
-    )
-    print(plot)
-  })
-  
-  output$boxplot <- renderPlot({
-    plot <- switch(
-      input$box_var,
-      "TNM Stage" = box_stage,
-      "Repsonse to Chemotherapy" = box_response
-    )
-    print(plot)
-  })
-  
-  output$kmcplot <- renderPlot({
-    plot <- switch(
-      input$kmc_var,
-      "Overall" = kmc_overall,
-      "Progression" = kmc_progression,
-      "Recurrence" = kmc_recurrence,
-      "Metastasis" = kmc_metastasis
-    )
-    print(plot)
-  })
-  
-  output$swimmerplot <- renderPlot({
-    plot <- switch(
-      input$swimmer_var,
-      "Standard therapy group" = swimmer_standard,
-      "Camrelizumab group" = swimmer_camrelizumab
-    )
-    print(plot)
-  })  
-}
-
-shinyApp(ui, server)
+# ui <- fluidPage(
+#   radioButtons("bar_var",
+#                "Select Variable for Survival Barplot",
+#                choices = c("T Stage","N Stage","M Stage","Chemotherapy")),
+#   radioButtons("box_var",
+#                "Select Type of Boxplot",
+#                choices = c("TNM Stage","Repsonse to Chemotherapy")),
+#   radioButtons("kmc_var",
+#                "Select Type of Kaplan–Meier curve",
+#                choices = c("Overall","Progression","Recurrence","Metastasis")),
+#   radioButtons("swimmer_var",
+#                "Select Type of Swimmer Plot",
+#                choices = c("Standard therapy group","Camrelizumab group")),
+#   plotOutput("barplot"),
+#   plotOutput("boxplot"),
+#   plotOutput("kmcplot"),
+#   plotOutput("swimmerplot")
+#   
+# )
+# 
+# server <- function(input, output, session) {
+#   output$barplot <- renderPlot({
+#     plot <- switch(
+#       input$bar_var,
+#       "T Stage" = t_stage_bar,
+#       "N Stage" = n_stage_bar,
+#       "M Stage" = m_stage_bar,
+#       "Chemotherapy" = chemo_bar
+#     )
+#     print(plot)
+#   })
+#   
+#   output$boxplot <- renderPlot({
+#     plot <- switch(
+#       input$box_var,
+#       "TNM Stage" = box_stage,
+#       "Repsonse to Chemotherapy" = box_response
+#     )
+#     print(plot)
+#   })
+#   
+#   output$kmcplot <- renderPlot({
+#     plot <- switch(
+#       input$kmc_var,
+#       "Overall" = kmc_overall,
+#       "Progression" = kmc_progression,
+#       "Recurrence" = kmc_recurrence,
+#       "Metastasis" = kmc_metastasis
+#     )
+#     print(plot)
+#   })
+#   
+#   output$swimmerplot <- renderPlot({
+#     plot <- switch(
+#       input$swimmer_var,
+#       "Standard therapy group" = swimmer_standard,
+#       "Camrelizumab group" = swimmer_camrelizumab
+#     )
+#     print(plot)
+#   })  
+# }
+# 
+# shinyApp(ui, server)
 ```
-
-#better-looking shiny app
+ 
+# better-looking shiny app with dashboard
 ```{r, eval=F, echo=T}
-
-
 ui <- dashboardPage(
   
   dashboardHeader(title = "Select the type of plot"),
