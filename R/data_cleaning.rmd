@@ -19,6 +19,7 @@ library(readxl)
 df <- read_excel("data/nasopharyngeal carcinoma/Database_for_High-Risk_Nasopharyngeal_Carcinoma_Treated_with_Chemoradiotherapy_and_Immunotherapy.xlsx")
 glimpse(df)
 ```
+
 ## quick cleaning
 ```{r}
 df <- df %>% clean_names()
@@ -34,6 +35,7 @@ df <- df %>% clean_names()
 - progression (Y/N): Whether the patient has experienced loco-regional relapse, distant metastasis, or death from any cause or not (0-No; 1-Yes)
 - Recurrence (Y/N): Whether the patient has had locoregional relapse or not (0-No; 1-Yes)
 - Metastasis (Y/N): Whether the patient has had distant metastasis or not (0-No; 1-Yes)
+
 ```{r}
 df <- df %>% 
   mutate(across(c(safety_set,pp_set,ebv_clearance_status,survival_y_n,progression_y_n,recurrence_y_n,metastasis_y_n),~case_when(
@@ -51,11 +53,8 @@ df <- df %>%
 ```{r}
 summary(df)
 ```
+
 ## write out cleaned one as csv
 ```{r}
 write_csv(df,"data/cleaned_data.csv")
 ```
-
-
-
-

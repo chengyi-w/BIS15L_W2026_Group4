@@ -17,4 +17,3 @@ DOI: `10.1136/bmj-2025-085863`
 ## Project goal
 
 The goal of this project is to explore the dataset and visualize the key findings from the study.
-

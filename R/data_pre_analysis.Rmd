@@ -11,16 +11,10 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 ```{r}
 #install.packages("survival")
 #install.packages("survminer")
 ```
-
 
 ```{r cars}
 library(tidyverse)
@@ -31,8 +25,6 @@ library(survminer)
 ```
 
 ## Importing Cleaned data
-
-
 ```{r echo=FALSE}
 result <- read_csv("data/cleaned_data.csv")
 ```
@@ -40,6 +32,7 @@ result <- read_csv("data/cleaned_data.csv")
 ```{r}
 result %>% summary()
 ```
+
 Notes:
 
 first will be evaluate the impact on survival rate of different stage of cancer
@@ -131,7 +124,8 @@ result %>%
   geom_bar(position = "dodge") +
   labs(title = "Tumor Progression by Image after 3 cycles of therapy", x = "Progression", y = "Count", fill="Treatment")
 ```
-#Data Re-organization
+
+# Data Re-organization
 ```{r}
 km_curve  <- result %>%
   mutate(
@@ -154,8 +148,7 @@ km_curve  <- result %>%
   )#Convert back to 1 and 0s
 ```
 
-#Kaplan–Meier curve for overall survival
-
+# Kaplan–Meier curve for overall survival
 ```{r}
 fit_os <- survfit(Surv(os, survival_event) ~ itt_group, data = km_curve)
 #tells R to estimate one curve per treatment group
@@ -171,8 +164,8 @@ ggsurvplot(
   conf.int = TRUE,
 )
 ```
-#Kaplan–Meier curve for Progression-Free Survival
 
+# Kaplan–Meier curve for Progression-Free Survival
 ```{r}
 fit_progression <- survfit(Surv(pfs, progression_event) ~ itt_group, data = km_curve)
 #tells R to estimate one curve per treatment group
@@ -188,8 +181,8 @@ ggsurvplot(
   conf.int = TRUE,
 )
 ```
-#Kaplan–Meier curve for Recurrence-Free Survival
 
+# Kaplan–Meier curve for Recurrence-Free Survival
 ```{r}
 fit_recurrence <- survfit(Surv(pfs, recurrence_event) ~ itt_group, data = km_curve)
 #tells R to estimate one curve per treatment group
@@ -205,8 +198,8 @@ ggsurvplot(
   conf.int = TRUE,
 )
 ```
-#Kaplan–Meier curve for Metastasis-Free Survival
 
+# Kaplan–Meier curve for Metastasis-Free Survival
 ```{r}
 fit_metastasis <- survfit(Surv(pfs, metastasis_event) ~ itt_group, data = km_curve)
 #tells R to estimate one curve per treatment group
@@ -222,7 +215,8 @@ ggsurvplot(
   conf.int = TRUE,
 )
 ```
-#Swimming Plot for patients
+
+# Swimming Plot for patients
 
 Step1: organize into new base for swimplot
 ```{r}

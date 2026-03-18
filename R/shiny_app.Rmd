@@ -16,6 +16,7 @@ library(shinydashboard)
 ```{r}
 result <- read_csv("data/cleaned_data.csv")
 ```
+
 # plots
 run and store the plots first, so it will be easier to build the shinyapp later and looks cleaner 
 
@@ -73,6 +74,7 @@ chemo_bar <- result %>% ggplot(aes(x=overall_response_y_n,fill=survival_y_n)) +
   scale_fill_discrete(labels = c("FALSE" = "Did not survive", "TRUE" = "Survived")) +
   theme_minimal()
 ```
+
 ## boxplots
 ```{r}
 box_stage <- result_long %>%
@@ -174,8 +176,8 @@ kmc_metastasis <- ggsurvplot(
   conf.int = TRUE,
 )
 ```
-## Swimmer Plot
 
+## Swimmer Plot
 ```{r}
 #Step1: organize into new base for swimplot
 swim_base <- result %>%
@@ -439,5 +441,3 @@ server <- function(input, output) {
 
 shinyApp(ui, server)
 ```
-
-
